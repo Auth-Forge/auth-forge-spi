@@ -19,13 +19,16 @@ jobs:
       - name: Get latest release version
         id: get_version
         run: |
-          # Get the latest tag that follows SemVer
-          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
-          echo "Latest tag: $latest_tag"
-          if [ -z "$latest_tag" ]; then
-            # If no tags are found, start at version 1.0.0
+          # Check if there are any tags
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            # If no tags are found, start at version 0.0.0
             latest_tag="0.0.0"
+          else
+            # Get the latest tag that follows SemVer
+            latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
           fi
+          echo "Latest tag: $latest_tag"
+
           # Extract version numbers from the tag
           IFS='.' read -r major minor patch <<<"${latest_tag//v/}"
           echo "Major: $major, Minor: $minor, Patch: $patch"
@@ -45,17 +48,17 @@ jobs:
           echo "New Version: $new_version"
           echo "::set-output name=version::$new_version"
 
-      - name: Build Docker Image and Extract JAR
-        id: build_jar
-        run: |
-          # Enable Docker BuildKit
-          export DOCKER_BUILDKIT=1
+          - name: Build Docker Image and Extract JAR
+            id: build_jar
+            run: |
+              # Enable Docker BuildKit
+              export DOCKER_BUILDKIT=1
 
-          # Build the Docker image and extract the JAR
-          docker build \
-            --output type=local,dest=./output \
-            --build-arg VERSION=${{ steps.get_version.outputs.version }} \
-            .
+              # Build the Docker image and extract the JAR
+              docker build \
+                --output type=local,dest=./output \
+                --build-arg VERSION=${{ steps.get_version.outputs.version }} \
+                .
 
       - name: List Output Directory
         run: ls -l output
