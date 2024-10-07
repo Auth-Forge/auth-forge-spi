@@ -1,0 +1,75 @@
+name: Build and Publish JAR
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/*'
+      - 'feature/*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get latest release version
+        id: get_version
+        run: |
+          # Get the latest tag that follows SemVer
+          latest_tag=$(git describe --tags $(git rev-list --tags --max-count=1))
+          echo "Latest tag: $latest_tag"
+          if [ -z "$latest_tag" ]; then
+            # If no tags are found, start at version 1.0.0
+            latest_tag="0.0.0"
+          fi
+          # Extract version numbers from the tag
+          IFS='.' read -r major minor patch <<<"${latest_tag//v/}"
+          echo "Major: $major, Minor: $minor, Patch: $patch"
+
+          # Increment the patch version
+          new_patch=$((patch+1))
+
+          # Default version string (feature or develop branch, incremented and with -SNAPSHOT)
+          new_version="${major}.${minor}.${new_patch}-SNAPSHOT"
+
+          # Check for branch type and modify the version accordingly
+          if [[ $GITHUB_REF == refs/heads/release/* ]]; then
+            # For release branches, just increment the version and remove -SNAPSHOT
+            new_version="${major}.${minor}.${new_patch}"
+          fi
+
+          echo "New Version: $new_version"
+          echo "::set-output name=version::$new_version"
+
+      - name: Build Docker Image and Extract JAR
+        id: build_jar
+        run: |
+          # Enable Docker BuildKit
+          export DOCKER_BUILDKIT=1
+
+          # Build the Docker image and extract the JAR
+          docker build \
+            --output type=local,dest=./output \
+            --build-arg VERSION=${{ steps.get_version.outputs.version }} \
+            .
+
+      - name: List Output Directory
+        run: ls -l output
+
+      - name: Upload JAR to GitHub Packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: auth-forge-spi-${{ steps.get_version.outputs.version }}.jar
+          path: output/auth-forge-spi-${{ steps.get_version.outputs.version }}.jar
+
+      - name: Push Version Tag
+        if: github.ref == 'refs/heads/release/*'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.get_version.outputs.version }}" -m "Release version v${{ steps.get_version.outputs.version }}"
+          git push origin "v${{ steps.get_version.outputs.version }}"
