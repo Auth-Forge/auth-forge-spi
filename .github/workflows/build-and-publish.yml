@@ -65,13 +65,13 @@ jobs:
       - name: Upload JAR to GitHub Packages
         uses: actions/upload-artifact@v3
         with:
-          name: auth-forge-spi-${{ steps.get_version.outputs.version }}.jar
-          path: output/auth-forge-spi-${{ steps.get_version.outputs.version }}.jar
+          name: auth-forge-spi-${{ env.version }}.jar
+          path: output/auth-forge-spi-${{ env.version }}.jar
 
       - name: Push Version Tag
         if: github.ref == 'refs/heads/release/*'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ steps.get_version.outputs.version }}" -m "Release version v${{ steps.get_version.outputs.version }}"
-          git push origin "v${{ steps.get_version.outputs.version }}"
+          git tag -a "v${{ env.version }}" -m "Release version v${{ env.version }}"
+          git push origin "v${{ env.version }}"
