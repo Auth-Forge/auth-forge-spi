@@ -51,10 +51,12 @@ jobs:
       - name: Build Docker Image and Publish JAR
         run: |
           docker build \
-            --build-arg VERSION={{ env.version }} \
+            --build-arg VERSION=${{ env.version }} \
             --build-arg GITHUB_ACTOR=${{ github.actor }} \
             --build-arg GITHUB_TOKEN=${{ secrets.AUTH_FORGE_TOKEN }} \
             -t auth-forge-spi:latest .
+
+
 
       - name: Push Version Tag
         if: github.ref == 'refs/heads/release/*'
