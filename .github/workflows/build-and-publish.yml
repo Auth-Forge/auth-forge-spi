@@ -46,20 +46,19 @@ jobs:
           fi
 
           echo "New Version: $new_version"
-          echo "::set-output name=version::$new_version"
+          echo "version=$new_version" >> $GITHUB_ENV
 
-          - name: Build Docker Image and Extract JAR
-            id: build_jar
-            run: |
-              # Enable Docker BuildKit
-              export DOCKER_BUILDKIT=1
+      - name: Build Docker Image and Extract JAR
+        id: build_jar
+        run: |
+          # Enable Docker BuildKit
+          export DOCKER_BUILDKIT=1
 
-              # Build the Docker image and extract the JAR
-              docker build \
-                --output type=local,dest=./output \
-                --build-arg VERSION=${{ steps.get_version.outputs.version }} \
-                .
-
+          # Build the Docker image and extract the JAR
+          docker build \
+            --output type=local,dest=./output \
+            --build-arg VERSION=${{ env.version }} \
+            .
       - name: List Output Directory
         run: ls -l output
 
