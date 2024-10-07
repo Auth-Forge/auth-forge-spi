@@ -48,25 +48,13 @@ jobs:
           echo "New Version: $new_version"
           echo "version=$new_version" >> $GITHUB_ENV
 
-      - name: Build Docker Image and Extract JAR
-        id: build_jar
+      - name: Build Docker Image and Publish JAR
         run: |
-          # Enable Docker BuildKit
-          export DOCKER_BUILDKIT=1
-
-          # Build the Docker image and extract the JAR
           docker build \
-            --output type=local,dest=./output \
-            --build-arg VERSION=${{ env.version }} \
-            .
-      - name: List Output Directory
-        run: ls -l output
-
-      - name: Upload JAR to GitHub Packages
-        uses: actions/upload-artifact@v3
-        with:
-          name: auth-forge-spi-${{ env.version }}.jar
-          path: output/auth-forge-spi-${{ env.version }}.jar
+            --build-arg VERSION=1.0-SNAPSHOT \
+            --build-arg GITHUB_ACTOR=${{ github.actor }} \
+            --build-arg GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+            -t auth-forge-spi:latest .
 
       - name: Push Version Tag
         if: github.ref == 'refs/heads/release/*'

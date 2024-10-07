@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("io.spring.dependency-management") version "1.1.6"
+    id("maven-publish") // Add Maven Publish Plugin
 }
 
 group = "io.authforge"
@@ -12,7 +13,6 @@ repositories {
 
 val junitVersion = "5.10.0"
 val keycloakVersion = "22.0.3"
-
 
 dependencyManagement {
     imports {
@@ -27,7 +27,6 @@ dependencies {
     compileOnly("org.keycloak:keycloak-server-spi-private")
     compileOnly("org.keycloak:keycloak-services")
     compileOnly("org.jboss.logging:jboss-logging")
-
 
     testImplementation(platform("org.junit:junit-bom:$junitVersion"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -45,3 +44,28 @@ tasks.withType<JavaCompile> {
     sourceCompatibility = JavaVersion.VERSION_17.toString()
     targetCompatibility = JavaVersion.VERSION_17.toString()
 }
+
+// Add the publishing configuration
+publishing {
+    publications {
+        create<MavenPublication>("authForgeSpi") {
+            from(components["java"]) // Use the JAR produced by the Java plugin
+
+            // Customize your artifact details (optional)
+            groupId = "io.authforge"
+            artifactId = "auth-forge-spi"
+            version = project.version.toString()
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Auth-Forge/auth-forge-spi")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
