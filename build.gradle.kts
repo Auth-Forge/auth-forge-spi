@@ -1,7 +1,9 @@
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     id("java")
     id("io.spring.dependency-management") version "1.1.6"
-    id("maven-publish") // Add Maven Publish Plugin
+    id("maven-publish")
 }
 
 group = "io.authforge"
@@ -45,16 +47,22 @@ tasks.withType<JavaCompile> {
     targetCompatibility = JavaVersion.VERSION_17.toString()
 }
 
-// Add the publishing configuration
+// Custom versioning strategy for snapshots
 publishing {
     publications {
         create<MavenPublication>("authForgeSpi") {
-            from(components["java"]) // Use the JAR produced by the Java plugin
+            from(components["java"])
 
-            // Customize your artifact details (optional)
             groupId = "io.authforge"
             artifactId = "auth-forge-spi"
             version = project.version.toString()
+
+            // Customize the snapshot versioning
+            versionMapping {
+                allVariants {
+                    fromResolutionResult()
+                }
+            }
         }
     }
     repositories {
@@ -68,4 +76,3 @@ publishing {
         }
     }
 }
-
